@@ -106,7 +106,7 @@ uv run main.py
 > [!WARNING]
 > Other package managers like pip or conda are not tested. You can still use them to install this workflow because there is a `pyproject.toml`, while potential problems exist.
 
-## 🚀 Sync with the latest version
+## 🚀 Sync with the latest version。
 This project is in active development. You can subscribe this repo via `Watch` so that you can be notified once we publish new release.
 
 ![Watch](./assets/subscribe_release.png)
