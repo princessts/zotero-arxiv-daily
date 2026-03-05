@@ -19,6 +19,7 @@ jobs:
 
       - name: Run script
         env:
+          # 加载你现有的所有 Secrets 和 Variables
           ZOTERO_ID: ${{ secrets.ZOTERO_ID }}
           ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}
           SENDER: ${{ secrets.SENDER }}
@@ -28,28 +29,25 @@ jobs:
           OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          # 把你的 CUSTOM_CONFIG 加回来，保留你的模型等原有设置
           CUSTOM_CONFIG: ${{ vars.CUSTOM_CONFIG }}
         run: |
-          # 1. 完整写入你已有的 CUSTOM_CONFIG（保留你设定的模型等所有配置）
+          # 1. 原封不动地生成你的自定义配置（完全保留你的模型设置等）
           printf "%b\n" "$CUSTOM_CONFIG" > config/custom.yaml
-          
-          # 2. 仅“追加”（注意这里是 >>）1.0 版本报错缺失的强制项
-          cat << 'EOF' >> config/custom.yaml
-          
-          llm:
-            api:
-              key: ${oc.env:OPENAI_API_KEY}
-              base_url: ${oc.env:OPENAI_API_BASE}
-          source:
-            arxiv:
-              # 你的专属研究方向
-              category: ["quant-ph", "physics.optics", "physics.ins-det", "cond-mat.supr-con"]
-          executor:
-            source: ['arxiv']
-            reranker: local
-          EOF
-          
           echo "Use custom config: "
           cat config/custom.yaml
-          uv run src/zotero_arxiv_daily/main.py
+          
+          # 2. 启动程序，并通过命令行安全地“补齐”所有缺失的桥接参数
+          # 这种做法绝对不会破坏你的 custom.yaml，也不会覆盖你设定的模型
+          uv run src/zotero_arxiv_daily/main.py \
+            zotero.user_id='${oc.env:ZOTERO_ID}' \
+            zotero.api_key='${oc.env:ZOTERO_KEY}' \
+            email.sender='${oc.env:SENDER}' \
+            email.receiver='${oc.env:RECEIVER}' \
+            email.sender_password='${oc.env:SENDER_PASSWORD}' \
+            email.smtp_server='${oc.env:SMTP_SERVER}' \
+            email.smtp_port='${oc.env:SMTP_PORT}' \
+            llm.api.key='${oc.env:OPENAI_API_KEY}' \
+            llm.api.base_url='${oc.env:OPENAI_API_BASE,https://api.openai.com/v1}' \
+            source.arxiv.category="[quant-ph,physics.optics,physics.ins-det,cond-mat.supr-con]" \
+            executor.source="[arxiv]" \
+            executor.reranker=local
