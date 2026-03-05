@@ -27,19 +27,26 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
           CUSTOM_CONFIG: ${{ vars.CUSTOM_CONFIG }}
-        run: |
+       run: |
           # 1. 读取原有的 CUSTOM_CONFIG 变量
           printf "%b\n" "$CUSTOM_CONFIG" > config/custom.yaml
           
           # 2. 将 1.0 版本必需的新变量直接追加写死到代码里
-          cat <<EOF >> config/custom.yaml
+          # 注意：这里改用 'EOF' (带单引号)，防止 bash 提前解析 $ 符号
+          cat << 'EOF' >> config/custom.yaml
           
           source:
             arxiv:
-              category: ["cs.AI","cs.CV","cs.LG","cs.CL"] # 这里请修改为你关注的具体领域
+              category: ["cs.AI","cs.CV","cs.LG","cs.CL"]
           executor:
             source: ['arxiv']
             reranker: local
+          llm:
+            api:
+              key: ${oc.env:OPENAI_API_KEY}
+              base_url: ${oc.env:OPENAI_API_BASE, "https://api.openai.com/v1"}
+            generation_kwargs:
+              model: gpt-4o-mini
           EOF
           
           # 3. 打印最终的配置并执行程序
