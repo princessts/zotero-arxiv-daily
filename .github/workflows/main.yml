@@ -19,7 +19,6 @@ jobs:
 
       - name: Run script
         env:
-          # --- 自动读取你已有的所有 Secrets，不需要你重新填 ---
           ZOTERO_ID: ${{ secrets.ZOTERO_ID }}
           ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}
           SENDER: ${{ secrets.SENDER }}
@@ -29,28 +28,22 @@ jobs:
           OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          # 把你的 CUSTOM_CONFIG 加回来，保留你的模型等原有设置
+          CUSTOM_CONFIG: ${{ vars.CUSTOM_CONFIG }}
         run: |
-          # 自动生成兼容 1.0 版本的配置文件
-          cat << 'EOF' > config/custom.yaml
-          zotero:
-            user_id: ${oc.env:ZOTERO_ID}
-            api_key: ${oc.env:ZOTERO_KEY}
-            include_path: null
-          email:
-            sender: ${oc.env:SENDER}
-            receiver: ${oc.env:RECEIVER}
-            sender_password: ${oc.env:SENDER_PASSWORD}
-            smtp_server: ${oc.env:SMTP_SERVER}
-            smtp_port: ${oc.env:SMTP_PORT}
+          # 1. 完整写入你已有的 CUSTOM_CONFIG（保留你设定的模型等所有配置）
+          printf "%b\n" "$CUSTOM_CONFIG" > config/custom.yaml
+          
+          # 2. 仅“追加”（注意这里是 >>）1.0 版本报错缺失的强制项
+          cat << 'EOF' >> config/custom.yaml
+          
           llm:
             api:
               key: ${oc.env:OPENAI_API_KEY}
-              base_url: ${oc.env:OPENAI_API_BASE, "https://api.openai.com/v1"}
-            generation_kwargs:
-              model: gpt-4o-mini
+              base_url: ${oc.env:OPENAI_API_BASE}
           source:
             arxiv:
-              # 根据你的研究方向精准匹配的分类代码
+              # 你的专属研究方向
               category: ["quant-ph", "physics.optics", "physics.ins-det", "cond-mat.supr-con"]
           executor:
             source: ['arxiv']
